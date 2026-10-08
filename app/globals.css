@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+/*
+ * Tokens semânticos. Cores servem a identificação e status; a base é neutra.
+ * O modo escuro já está mapeado (segue o sistema); um toggle manual vem depois.
+ */
+:root {
+  --background: #fafafa;
+  --foreground: #18181b;
+  --card: #ffffff;
+  --muted: #f4f4f5;
+  --muted-foreground: #686870;
+  --border: #e4e4e7;
+  --primary: #4f46e5;
+  --primary-foreground: #ffffff;
+  --primary-soft: #eef2ff;
+  --success: #047857;
+  --success-soft: #ecfdf5;
+  --warning: #b45309;
+  --warning-soft: #fffbeb;
+  --danger: #be123c;
+  --danger-soft: #fff1f2;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #09090b;
+    --foreground: #fafafa;
+    --card: #131316;
+    --muted: #1c1c20;
+    --muted-foreground: #a1a1aa;
+    --border: #27272a;
+    --primary: #818cf8;
+    --primary-foreground: #0b0b14;
+    --primary-soft: #1e1b4b;
+    --success: #34d399;
+    --success-soft: #052e22;
+    --warning: #fbbf24;
+    --warning-soft: #2d1b05;
+    --danger: #fb7185;
+    --danger-soft: #3b0a17;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-soft: var(--primary-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
