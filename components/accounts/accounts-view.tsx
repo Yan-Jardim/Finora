@@ -20,6 +20,7 @@ import { formatMoney } from "@/lib/format";
 import { accountTypeLabel } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 import { AccountFormDialog } from "./account-form";
+import { OpenFinancePanel } from "./open-finance-panel";
 
 const columns = "md:grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.1fr)_auto]";
 
@@ -41,7 +42,7 @@ function SummaryTile({ label, value, hint, icon: Icon }: { label: string; value:
 }
 
 export function AccountsView() {
-  const { data, ready, repos, today } = useWorkspace();
+  const { data, ready, repos, today, mode } = useWorkspace();
   const run = useAction();
   const [ownerFilter, setOwnerFilter] = useState("all");
   const [form, setForm] = useState<{ open: boolean; account?: Account }>({ open: false });
@@ -176,6 +177,8 @@ export function AccountsView() {
           </p>
         </>
       )}
+
+      {mode === "supabase" && <OpenFinancePanel />}
 
       <AccountFormDialog open={form.open} onClose={() => setForm({ open: false })} account={form.account} />
 
