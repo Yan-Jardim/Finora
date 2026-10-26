@@ -1,6 +1,6 @@
 /**
  * Tipos do banco (identidade, categorias, contas, cartões, movimentações, faturas, parcelas, tags, views financeiras,
- * recorrências, dívidas, cofrinhos e objetivos, e RPCs). Gerado com `generate_typescript_types` do Supabase (2026-10-07) —
+ * recorrências, dívidas, cofrinhos e objetivos, Open Finance e RPCs). Gerado com `generate_typescript_types` do Supabase (2026-10-07) —
  * regenerar a cada nova migration.
  */
 export type Json =
@@ -82,6 +82,142 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "financial_profiles"
             referencedColumns: ["household_id", "id"]
+          },
+        ]
+      }
+      bank_balances: {
+        Row: {
+          account_id: string | null
+          available_limit_cents: number | null
+          balance_cents: number
+          connection_id: string
+          credit_limit_cents: number | null
+          currency: string
+          external_account_id: string
+          household_id: string
+          id: string
+          name: string
+          number: string | null
+          subtype: string | null
+          synced_at: string
+          type: string
+        }
+        Insert: {
+          account_id?: string | null
+          available_limit_cents?: number | null
+          balance_cents: number
+          connection_id: string
+          credit_limit_cents?: number | null
+          currency?: string
+          external_account_id: string
+          household_id: string
+          id?: string
+          name: string
+          number?: string | null
+          subtype?: string | null
+          synced_at?: string
+          type: string
+        }
+        Update: {
+          account_id?: string | null
+          available_limit_cents?: number | null
+          balance_cents?: number
+          connection_id?: string
+          credit_limit_cents?: number | null
+          currency?: string
+          external_account_id?: string
+          household_id?: string
+          id?: string
+          name?: string
+          number?: string | null
+          subtype?: string | null
+          synced_at?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_balances_connection_fk"
+            columns: ["household_id", "connection_id"]
+            isOneToOne: false
+            referencedRelation: "bank_connections"
+            referencedColumns: ["household_id", "id"]
+          },
+          {
+            foreignKeyName: "bank_balances_account_fk"
+            columns: ["household_id", "account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["household_id", "id"]
+          },
+          {
+            foreignKeyName: "bank_balances_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_connections: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          credential_key: string
+          household_id: string
+          id: string
+          institution: string | null
+          item_id: string
+          last_error: string | null
+          last_synced_at: string | null
+          owner_profile_id: string
+          provider: string
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          credential_key: string
+          household_id: string
+          id?: string
+          institution?: string | null
+          item_id: string
+          last_error?: string | null
+          last_synced_at?: string | null
+          owner_profile_id: string
+          provider?: string
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          credential_key?: string
+          household_id?: string
+          id?: string
+          institution?: string | null
+          item_id?: string
+          last_error?: string | null
+          last_synced_at?: string | null
+          owner_profile_id?: string
+          provider?: string
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_connections_owner_profile_fk"
+            columns: ["household_id", "owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "financial_profiles"
+            referencedColumns: ["household_id", "id"]
+          },
+          {
+            foreignKeyName: "bank_connections_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1698,6 +1834,16 @@ export type Database = {
           p_pocket_id: string
         }
         Returns: string
+      }
+      record_bank_sync: {
+        Args: {
+          p_accounts?: Json
+          p_connection_id: string
+          p_error?: string
+          p_institution?: string
+          p_status: string
+        }
+        Returns: undefined
       }
       recurrence_dates: {
         Args: {

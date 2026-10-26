@@ -24,6 +24,7 @@ const UNIQUE_BY_CONSTRAINT: Record<string, string> = {
   financial_profiles_household_name_key: "Já existe uma pessoa com esse nome.",
   transactions_installment_key: "Esta parcela já existe nesta compra.",
   transactions_recurring_occurrence_key: "Esta ocorrência da recorrência já existe.",
+  bank_connections_item_key: "Este banco (Item ID) já está conectado.",
 };
 
 const CHECK_BY_CONSTRAINT: Record<string, string> = {
@@ -37,6 +38,8 @@ const CHECK_BY_CONSTRAINT: Record<string, string> = {
   recurring_transactions_date_range: "A data final não pode ser anterior à data inicial.",
   pockets_name_check: "O nome do cofrinho deve ter entre 1 e 60 caracteres.",
   goals_manual_xor_pocket: "Um objetivo ligado a um cofrinho não tem valor informado à mão.",
+  bank_connections_item_id_check: "Item ID inválido. Copie o ID da conexão no Dashboard da Pluggy.",
+  bank_connections_credential_key_check: "Credencial inválida. Escolha uma das credenciais configuradas.",
 };
 
 /** Códigos de domínio das nossas funções e triggers (texto da exceção). */
@@ -113,6 +116,9 @@ const RULE_CODES: Record<string, string> = {
   use_inconsistent: "A despesa e o uso do cofrinho ficaram inconsistentes. Nada foi alterado.",
   transfer_unbalanced: "A transferência entre cofrinhos precisa ter as duas pontas iguais. Nada foi alterado.",
   pocket_history_immutable: "O histórico de um cofrinho não pode ser alterado.",
+  // Open Finance
+  bank_connection_not_found: "Conexão bancária não encontrada.",
+  invalid_bank_accounts: "O banco devolveu dados em formato inesperado. Nada foi alterado.",
   // acesso
   forbidden: "Você não tem permissão para esta ação.",
   not_authenticated: "Sua sessão expirou. Entre novamente.",
