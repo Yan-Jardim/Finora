@@ -18,7 +18,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
             </p>
           )}
           {group.items.map(({ label, href, icon: Icon, soon }) => {
-            const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+            const active = href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
             const base = "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors";
 
             if (soon) {

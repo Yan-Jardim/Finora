@@ -41,6 +41,7 @@ Sem as credenciais de teste, as suítes que tocam o banco real são **puladas** 
 | [docs/FINANCIAL_RULES.md](docs/FINANCIAL_RULES.md) | **Regras financeiras e invariantes** (fonte única), "Disponível de verdade" |
 | [docs/REPORTS.md](docs/REPORTS.md) | Relatórios: caixa × consumo, métricas, filtros, CSV |
 | [docs/PLANNING.md](docs/PLANNING.md), [docs/CALENDAR.md](docs/CALENDAR.md) | Projeção de caixa e calendário financeiro |
+| [docs/BILLS.md](docs/BILLS.md) | Contas do mês: lista, "Pago", total pendente e colar lista do WhatsApp |
 | [docs/RECURRENCES.md](docs/RECURRENCES.md), [docs/DEBTS.md](docs/DEBTS.md), [docs/POCKETS.md](docs/POCKETS.md) | Recorrências, dívidas, cofrinhos e objetivos |
 | [docs/TEST_STABILITY.md](docs/TEST_STABILITY.md) | Estabilidade dos testes, `resilient-fetch`, E2E |
 | [docs/RELEASE_CANDIDATE.md](docs/RELEASE_CANDIDATE.md) | Auditoria do release candidate (segurança, migrations, performance, paridade, pendências) |

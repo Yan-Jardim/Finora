@@ -1,4 +1,5 @@
 import { CheckCircle2, CreditCard, Landmark, Receipt } from "lucide-react";
+import Link from "next/link";
 import { Card, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { formatDayMonth, formatMoney } from "@/lib/format";
@@ -10,7 +11,15 @@ const typeIcon = { bill: Receipt, invoice: CreditCard, debt: Landmark } as const
 export function UpcomingBills({ items }: { items: UpcomingItem[] }) {
   return (
     <Card>
-      <CardHeader title="Próximas contas" description="Vencimentos em aberto neste mês" />
+      <CardHeader
+        title="Próximas contas"
+        description="Vencimentos em aberto neste mês"
+        action={
+          <Link href="/contas-do-mes" className="text-xs font-medium text-primary hover:underline">
+            Contas do mês
+          </Link>
+        }
+      />
       {items.length === 0 ? (
         <EmptyState icon={CheckCircle2} title="Nenhuma conta em aberto" description="Você está em dia neste mês." />
       ) : (

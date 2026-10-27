@@ -1,8 +1,8 @@
 "use client";
 
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, Check, ExternalLink } from "lucide-react";
 import Link from "next/link";
-import { useWorkspace } from "@/components/providers/workspace-provider";
+import { useAction, useWorkspace } from "@/components/providers/workspace-provider";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -28,9 +28,14 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   );
 }
 
-/** Detalhe de um evento. Só leitura: pagar/editar acontece nas telas existentes (link). */
-function EventDetail({ event }: { event: CalendarEvent }) {
-  const { data } = useWorkspace();
+/** Detalhe de um evento. Conta em aberto pode ser marcada como paga aqui; o resto acontece nas telas existentes (link). */
+function EventDetail({ event, onClose }: { event: CalendarEvent; onClose: () => void }) {
+  const { data, commands } = useWorkspace();
+  const run = useAction();
+  const payable = event.type === "expense" && event.status !== "paid" ? data.transactions.find((t) => t.id === event.transactionId) : undefined;
+  const markPaid = async () => {
+    if (payable && (await run(() => commands.setStatus(payable, "paid"), `${event.title}: paga ✅`))) onClose();
+  };
   const profile = data.profiles.find((p) => p.id === event.profileId);
   const account = data.accounts.find((a) => a.id === event.accountId);
   const toAccount = data.accounts.find((a) => a.id === event.toAccountId);
@@ -74,13 +79,18 @@ function EventDetail({ event }: { event: CalendarEvent }) {
       {event.type === "card_payment" && (
         <p className="rounded-xl bg-muted px-3 py-2 text-xs text-muted-foreground">Pagamento de fatura não é uma nova despesa: as compras já foram contadas.</p>
       )}
+      {payable && (
+        <Button onClick={markPaid} data-testid="calendar-mark-paid">
+          <Check className="size-4" aria-hidden /> Marcar como pago
+        </Button>
+      )}
       <Link
         href={event.href}
         className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-medium hover:bg-muted focus-visible:outline-2 focus-visible:outline-primary"
       >
         <ExternalLink className="size-4" aria-hidden /> {LINK_LABEL[event.href] ?? "Abrir"}
       </Link>
-      <p className="text-xs text-muted-foreground">O calendário só mostra os compromissos; pagar e editar são feitos na tela indicada.</p>
+      <p className="text-xs text-muted-foreground">Faturas, parcelas e edições são feitas na tela indicada.</p>
     </div>
   );
 }
@@ -111,7 +121,7 @@ export function CalendarDetailDialog({
               <ArrowLeft className="size-4" aria-hidden /> Voltar ao dia
             </Button>
           )}
-          <EventDetail event={event} />
+          <EventDetail event={event} onClose={onClose} />
         </div>
       ) : day ? (
         day.events.length === 0 ? (

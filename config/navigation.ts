@@ -6,6 +6,7 @@ import {
   Landmark,
   LayoutDashboard,
   LineChart,
+  ListChecks,
   PiggyBank,
   Receipt,
   Repeat,
@@ -33,7 +34,9 @@ export const navigation: NavGroup[] = [
   {
     items: [
       { label: "Visão Geral", href: "/", icon: LayoutDashboard },
+      { label: "Contas do mês", href: "/contas-do-mes", icon: ListChecks },
       { label: "Movimentações", href: "/movimentacoes", icon: Receipt },
+      { label: "Calendário", href: "/calendario", icon: CalendarDays },
       { label: "Recorrências", href: "/recorrencias", icon: Repeat },
       { label: "Contas", href: "/contas", icon: Landmark },
       { label: "Cartões", href: "/cartoes", icon: CreditCard },
@@ -43,7 +46,6 @@ export const navigation: NavGroup[] = [
   {
     title: "Futuro",
     items: [
-      { label: "Calendário", href: "/calendario", icon: CalendarDays },
       { label: "Planejamento", href: "/planejamento", icon: LineChart },
       { label: "Objetivos", href: "/objetivos", icon: Target },
       { label: "Cofrinhos", href: "/cofrinhos", icon: PiggyBank },
