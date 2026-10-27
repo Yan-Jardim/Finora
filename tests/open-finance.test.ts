@@ -182,6 +182,24 @@ describe("contas reais viram contas do Finora", () => {
   });
 });
 
+describe("mesmo banco em duas conexões", () => {
+  it("a segunda conta ganha o número no nome em vez de ficar sem vínculo", () => {
+    const connections = [
+      { id: "c1", ownerProfileId: "yan", institution: "Nubank" },
+      { id: "c2", ownerProfileId: "camila", institution: "Nubank" },
+    ];
+    const balances = [
+      { id: "b1", connectionId: "c1", name: "Nu", number: "111", accountId: "a-nu" },
+      { id: "b2", connectionId: "c2", name: "Nu", number: "222", accountId: null },
+    ];
+    const plan = planAccountLinks({ balances, connections, accounts: [{ id: "a-nu", name: "Nubank" }] });
+    expect(plan.create).toEqual([{ balanceId: "b2", name: "Nubank 222", institution: "Nubank", ownerProfileId: "camila" }]);
+
+    const fresh = planAccountLinks({ balances: balances.map((b) => ({ ...b, accountId: null })), connections, accounts: [] });
+    expect(fresh.create.map((c) => c.name)).toEqual(["Nubank", "Nubank 222"]);
+  });
+});
+
 describe("saldo do banco tem prioridade", () => {
   it("substitui o saldo calculado das contas ligadas e mantém as demais", () => {
     const derived = new Map([

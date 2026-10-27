@@ -154,14 +154,21 @@ export function planAccountLinks({ balances, connections, accounts }: LinkPlanIn
     if (!connection) continue;
     const siblings = balances.filter((b) => b.connectionId === balance.connectionId).length;
     const base = (isAggregatorName(connection.institution) ? balance.name.replace(/\s*\(.*\)\s*$/, "") : connection.institution!).slice(0, 40);
-    const name = (siblings > 1 && balance.number ? `${base} ${balance.number}` : base).slice(0, 60);
+    const withNumber = balance.number ? `${base} ${balance.number}`.slice(0, 60) : null;
+    // Mesmo banco em duas conexões (ex.: Nubank do Yan e da Camila): a segunda leva o número no nome.
+    const candidates = siblings > 1 && withNumber ? [withNumber] : [base, ...(withNumber ? [withNumber] : [])];
+    const name = candidates.find((n) => {
+      const id = byName.get(n.toLowerCase());
+      return id ? !taken.has(id) : !planned.has(n.toLowerCase());
+    });
+    if (!name) continue;
     const key = name.toLowerCase();
 
     const existing = byName.get(key);
-    if (existing && !taken.has(existing)) {
+    if (existing) {
       plan.link.push({ balanceId: balance.id, accountId: existing });
       taken.add(existing);
-    } else if (!existing && !planned.has(key)) {
+    } else {
       plan.create.push({
         balanceId: balance.id,
         name,
