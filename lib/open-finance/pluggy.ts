@@ -30,6 +30,7 @@ export interface PluggyAccount {
   /** Em reais (float). No cartão: valor da fatura atual. */
   balance: number;
   currencyCode?: string | null;
+  bankData?: { transferNumber?: string | null } | null;
   creditData?: { creditLimit?: number | null; availableCreditLimit?: number | null } | null;
 }
 

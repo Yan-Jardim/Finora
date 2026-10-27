@@ -11,14 +11,15 @@ type Row = Record<string, unknown>;
  * Valores derivados vindos das VIEWS do banco (security_invoker: o RLS de quem consulta vale):
  *  - v_account_balances ....... saldo atual por conta (saldo inicial + movimentações pagas);
  *  - v_card_invoice_totals .... compras, pagamentos e valor em aberto por fatura;
- *  - v_card_usage ............. limite utilizado/disponível por cartão (fuso do household).
+ *  - v_card_usage ............. limite utilizado/disponível por cartão (fuso do household);
+ *  - bank_balances ............ saldo REAL lido pelo Open Finance: tem prioridade sobre o derivado na conta ligada.
  * O navegador não recalcula o histórico. As faturas são poucas (cartões x meses), então vêm todas.
  */
 export class SupabaseFinanceReader implements FinanceReader {
   constructor(private readonly client: SupabaseClient) {}
 
   async snapshot(): Promise<FinanceSnapshot> {
-    const [balances, invoices, usage, debtSummary, debtInst, pocketBal, reserves] = await Promise.all([
+    const [balances, invoices, usage, debtSummary, debtInst, pocketBal, reserves, bank] = await Promise.all([
       this.client.from("v_account_balances").select("account_id, balance_cents"),
       this.client
         .from("v_card_invoice_totals")
@@ -29,11 +30,15 @@ export class SupabaseFinanceReader implements FinanceReader {
       this.client.from("v_debt_installments").select("*").order("debt_id").order("number"),
       this.client.from("v_pocket_balances").select("pocket_id, balance_cents"),
       this.client.from("v_account_reserves").select("account_id, reserved_cents"),
+      this.client.from("bank_balances").select("account_id, balance_cents").eq("type", "BANK").not("account_id", "is", null),
     ]);
-    for (const result of [balances, invoices, usage, debtSummary, debtInst, pocketBal, reserves]) if (result.error) throw toFriendlyError(result.error);
+    for (const result of [balances, invoices, usage, debtSummary, debtInst, pocketBal, reserves, bank]) if (result.error) throw toFriendlyError(result.error);
 
     return {
-      accountBalances: new Map((balances.data as Row[]).map((r) => [r.account_id as string, Number(r.balance_cents)])),
+      accountBalances: preferBankBalances(
+        new Map((balances.data as Row[]).map((r) => [r.account_id as string, Number(r.balance_cents)])),
+        bank.data as Row[],
+      ),
       pocketBalances: new Map((pocketBal.data as Row[]).map((r) => [r.pocket_id as string, Number(r.balance_cents)])),
       accountReserved: new Map((reserves.data as Row[]).map((r) => [r.account_id as string, Number(r.reserved_cents)])),
       invoices: (invoices.data as Row[]).map(
@@ -89,4 +94,19 @@ export class SupabaseFinanceReader implements FinanceReader {
     if (error) throw toFriendlyError(error);
     return (data as Row[]).map((r) => r.name as string);
   }
+}
+
+/**
+ * Open Finance tem prioridade: a conta do Finora ligada a uma conta real passa a valer o saldo lido do banco
+ * (várias contas reais ligadas à mesma conta somam). Contas sem vínculo seguem com o saldo derivado das movimentações.
+ */
+export function preferBankBalances(derived: Map<string, number>, bankRows: Row[]): Map<string, number> {
+  const fromBank = new Map<string, number>();
+  for (const row of bankRows) {
+    const accountId = row.account_id as string | null;
+    if (accountId) fromBank.set(accountId, (fromBank.get(accountId) ?? 0) + Number(row.balance_cents));
+  }
+  const result = new Map(derived);
+  for (const [accountId, cents] of fromBank) result.set(accountId, cents);
+  return result;
 }

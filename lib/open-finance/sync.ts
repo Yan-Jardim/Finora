@@ -1,3 +1,4 @@
+import { institutionName, isAggregatorName } from "./institutions";
 import { PluggyError, type PluggyAccount, type PluggyClient } from "./pluggy";
 
 /**
@@ -106,7 +107,7 @@ export async function fetchConnections(
       results.push({
         connectionId: connection.id,
         status: item.status,
-        institution: item.connector?.name ?? null,
+        institution: institutionName(item.connector?.name, accounts),
         error: null,
         accounts: accounts.map(toBalanceRow),
       });
@@ -121,4 +122,54 @@ export async function fetchConnections(
     }
   }
   return results;
+}
+
+export interface LinkPlanInput {
+  /** Contas reais (BANK) já gravadas, com ou sem vínculo. */
+  balances: { id: string; connectionId: string; name: string; number: string | null; accountId: string | null }[];
+  connections: { id: string; ownerProfileId: string; institution: string | null }[];
+  /** Contas do Finora existentes (nome único por household, sem diferenciar maiúsculas). */
+  accounts: { id: string; name: string }[];
+}
+
+export interface LinkPlan {
+  link: { balanceId: string; accountId: string }[];
+  create: { balanceId: string; name: string; institution: string | null; ownerProfileId: string }[];
+}
+
+/**
+ * Toda conta real sem vínculo vira (ou se liga a) uma conta do Finora, para o saldo do banco entrar nos totais.
+ * Nome = instituição ("Itaú"); se a conexão tiver mais de uma conta, o número entra no nome. Se já existir uma conta
+ * do Finora com esse nome e ainda livre, ela é reaproveitada em vez de criar outra.
+ */
+export function planAccountLinks({ balances, connections, accounts }: LinkPlanInput): LinkPlan {
+  const plan: LinkPlan = { link: [], create: [] };
+  const taken = new Set(balances.map((b) => b.accountId).filter((id): id is string => !!id));
+  const byName = new Map(accounts.map((a) => [a.name.trim().toLowerCase(), a.id]));
+  const planned = new Set<string>();
+
+  for (const balance of balances) {
+    if (balance.accountId) continue;
+    const connection = connections.find((c) => c.id === balance.connectionId);
+    if (!connection) continue;
+    const siblings = balances.filter((b) => b.connectionId === balance.connectionId).length;
+    const base = (isAggregatorName(connection.institution) ? balance.name.replace(/\s*\(.*\)\s*$/, "") : connection.institution!).slice(0, 40);
+    const name = (siblings > 1 && balance.number ? `${base} ${balance.number}` : base).slice(0, 60);
+    const key = name.toLowerCase();
+
+    const existing = byName.get(key);
+    if (existing && !taken.has(existing)) {
+      plan.link.push({ balanceId: balance.id, accountId: existing });
+      taken.add(existing);
+    } else if (!existing && !planned.has(key)) {
+      plan.create.push({
+        balanceId: balance.id,
+        name,
+        institution: isAggregatorName(connection.institution) ? null : connection.institution,
+        ownerProfileId: connection.ownerProfileId,
+      });
+      planned.add(key);
+    }
+  }
+  return plan;
 }

@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import { configuredCredentialKeys, credentialsFor } from "@/lib/open-finance/credentials";
 import { createPluggyClient, PLUGGY_API_URL, PluggyError, type PluggyAccount } from "@/lib/open-finance/pluggy";
-import { fetchConnections, isStale, itemStatusNotice, toBalanceRow } from "@/lib/open-finance/sync";
+import { institutionName } from "@/lib/open-finance/institutions";
+import { fetchConnections, isStale, itemStatusNotice, planAccountLinks, toBalanceRow } from "@/lib/open-finance/sync";
+import { preferBankBalances } from "@/repositories/supabase/supabase-finance-reader";
 import { bankConnectionSchema } from "@/schemas/bank-connection";
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
@@ -135,5 +137,63 @@ describe("formulário de conexão", () => {
     expect(bankConnectionSchema.safeParse({ ...base, itemId: " 7a1b2c3d-0000-4e5f-9a8b-112233445566 " }).success).toBe(true);
     expect(bankConnectionSchema.safeParse({ ...base, itemId: "../items" }).success).toBe(false);
     expect(bankConnectionSchema.safeParse({ ...base, credentialKey: "Yan!", itemId: "abc" }).success).toBe(false);
+  });
+});
+
+describe("nome do banco", () => {
+  it("pelo Meu Pluggy, deduz o banco pelo código de transferência", () => {
+    expect(institutionName("MeuPluggy", [{ ...bank, bankData: { transferNumber: "341/7471/00089066-0" } }])).toBe("Itaú");
+    expect(institutionName("Nubank", [bank])).toBe("Nubank");
+    expect(institutionName("MeuPluggy", [{ ...bank, name: "Conta Mercado Pago (PF)" }])).toBe("Conta Mercado Pago");
+  });
+});
+
+describe("contas reais viram contas do Finora", () => {
+  const connections = [
+    { id: "c1", ownerProfileId: "p1", institution: "Itaú" },
+    { id: "c2", ownerProfileId: "p1", institution: "MeuPluggy" },
+  ];
+
+  it("cria uma conta por banco, reaproveita nome livre e não duplica", () => {
+    const plan = planAccountLinks({
+      balances: [
+        { id: "b1", connectionId: "c1", name: "Conta", number: "1", accountId: null },
+        { id: "b2", connectionId: "c2", name: "Nubank (PF)", number: null, accountId: null },
+        { id: "b3", connectionId: "c2", name: "Nubank (PF)", number: null, accountId: "a-ok" },
+      ],
+      connections,
+      accounts: [{ id: "a-itau", name: "itaú" }],
+    });
+    expect(plan.link).toEqual([{ balanceId: "b1", accountId: "a-itau" }]);
+    // Sem nome de banco confiável ("MeuPluggy"), usa o nome da conta e não grava a instituição genérica.
+    expect(plan.create).toEqual([{ balanceId: "b2", name: "Nubank", institution: null, ownerProfileId: "p1" }]);
+  });
+
+  it("várias contas da mesma conexão levam o número no nome", () => {
+    const plan = planAccountLinks({
+      balances: [
+        { id: "b1", connectionId: "c1", name: "Conta", number: "111", accountId: null },
+        { id: "b2", connectionId: "c1", name: "Poupança", number: "222", accountId: null },
+      ],
+      connections,
+      accounts: [],
+    });
+    expect(plan.create.map((c) => c.name)).toEqual(["Itaú 111", "Itaú 222"]);
+  });
+});
+
+describe("saldo do banco tem prioridade", () => {
+  it("substitui o saldo calculado das contas ligadas e mantém as demais", () => {
+    const derived = new Map([
+      ["a1", 1000],
+      ["a2", 500],
+    ]);
+    const result = preferBankBalances(derived, [
+      { account_id: "a1", balance_cents: 365537 },
+      { account_id: "a1", balance_cents: 100 },
+    ]);
+    expect(result.get("a1")).toBe(365637);
+    expect(result.get("a2")).toBe(500);
+    expect(derived.get("a1")).toBe(1000);
   });
 });

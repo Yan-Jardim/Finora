@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Dialog } from "@/components/ui/dialog";
-import { snapshotBalance, snapshotOf } from "@/domain/snapshot";
 import { formatMoney } from "@/lib/format";
 import {
   addBankConnection,
@@ -33,11 +32,12 @@ const syncedAtLabel = (iso: string | null) =>
     : "nunca";
 
 /**
- * Saldos lidos do banco via Open Finance (Pluggy), lado a lado com o saldo que o Finora calcula.
- * Só no modo supabase. É informação: nada aqui entra em saldos, faturas ou relatórios.
+ * Saldos lidos do banco via Open Finance (Pluggy). Só no modo supabase.
+ * Dados reais têm prioridade: cada conta real fica ligada a uma conta do Finora, que passa a usar o saldo do banco.
  */
 export function OpenFinancePanel() {
   const toast = useToast();
+  const { reload } = useWorkspace();
   const [state, setState] = useState<OpenFinanceState | null>(null);
   const [busy, setBusy] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -51,10 +51,11 @@ export function OpenFinancePanel() {
         return false;
       }
       setState(result.state);
+      if (result.accountsChanged) void reload();
       if (success) toast.success(success);
       return true;
     },
-    [toast],
+    [toast, reload],
   );
 
   const runAction = useCallback(
@@ -79,7 +80,7 @@ export function OpenFinancePanel() {
       setBusy(true);
       try {
         const synced = await syncBankConnections({ onlyStale: true });
-        if (synced.ok) setState(synced.state);
+        if (synced.ok) apply(synced);
       } finally {
         setBusy(false);
       }
@@ -92,7 +93,7 @@ export function OpenFinancePanel() {
         <div>
           <h2 className="text-base font-semibold">Saldos no banco (Open Finance)</h2>
           <p className="text-sm text-muted-foreground">
-            Lidos pelo Meu Pluggy, que atualiza uma vez por dia. Servem para conferir o saldo do Finora; não entram nos totais.
+            Lidos pelo Meu Pluggy, que atualiza uma vez por dia. Têm prioridade: a conta ligada no Finora usa o saldo do banco nos totais.
           </p>
         </div>
         <div className="flex gap-2">
@@ -174,11 +175,10 @@ function ConnectionCard({
   connection: BankConnectionView;
   busy: boolean;
   onRemove: () => void;
-  onLink: (balanceId: string, accountId: string | null) => void;
+  onLink: (balanceId: string, accountId: string) => void;
 }) {
-  const { data, today } = useWorkspace();
+  const { data } = useWorkspace();
   const owner = data.profiles.find((p) => p.id === connection.ownerProfileId);
-  const snapshot = snapshotOf(data, today);
 
   return (
     <Card className="flex flex-col gap-3 p-0">
@@ -224,9 +224,6 @@ function ConnectionCard({
       ) : (
         <ul className="divide-y divide-border border-t border-border">
           {connection.balances.map((balance) => {
-            const linked = data.accounts.find((a) => a.id === balance.accountId);
-            const finoraCents = linked ? snapshotBalance(snapshot, linked) : null;
-            const diff = finoraCents === null ? null : balance.balanceCents - finoraCents;
             return (
               <li key={balance.id} className="grid grid-cols-1 items-center gap-2 px-4 py-3 sm:px-5 md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1.4fr)]">
                 <div className="min-w-0">
@@ -249,26 +246,20 @@ function ConnectionCard({
                 {balance.type === "BANK" ? (
                   <div className="flex flex-col gap-1">
                     <Select
-                      aria-label={`Comparar ${balance.name} com uma conta do Finora`}
+                      aria-label={`Conta do Finora que usa o saldo de ${balance.name}`}
                       value={balance.accountId ?? ""}
                       disabled={busy}
-                      onChange={(e) => onLink(balance.id, e.target.value || null)}
+                      onChange={(e) => e.target.value && onLink(balance.id, e.target.value)}
                       className="h-8 text-xs"
                     >
-                      <option value="">Comparar com…</option>
+                      {!balance.accountId && <option value="">Ligando a uma conta…</option>}
                       {data.accounts.map((a) => (
                         <option key={a.id} value={a.id}>
                           {a.name}
                         </option>
                       ))}
                     </Select>
-                    {diff !== null && (
-                      <p className={cn("text-xs", diff === 0 ? "text-success" : "text-warning")}>
-                        {diff === 0
-                          ? "Bate com o Finora."
-                          : `Finora: ${formatMoney(finoraCents!)} (diferença de ${formatMoney(Math.abs(diff))})`}
-                      </p>
-                    )}
+                    <p className="text-xs text-muted-foreground">Conta do Finora que usa este saldo.</p>
                   </div>
                 ) : (
                   <span />

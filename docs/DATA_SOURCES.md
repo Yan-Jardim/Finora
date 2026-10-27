@@ -23,7 +23,7 @@ O ponto único de escolha é `repositories/index.ts` (`createDataSource`). Compo
 | Tags | **Supabase** | Sugestões vêm de `tags`; ligações via RPC. |
 | Cofrinhos e objetivos | **Supabase** | Cadastro e histórico lidos do banco; saldo por `v_pocket_balances`, reservado por `v_account_reserves`; escritas só por RPC ([POCKETS.md](./POCKETS.md)). Objetivos: CRUD com RLS. |
 | Recorrências, dívidas | **Supabase** | Leitura + RPCs; pago/parcelas de dívida por `v_debt_summary` / `v_debt_installments`. |
-| Saldos no banco (Open Finance) | **Pluggy → Supabase** (`bank_connections`, `bank_balances`) | Só informação, para comparar; nunca soma ([OPEN_FINANCE.md](./OPEN_FINANCE.md)). |
+| Saldos no banco (Open Finance) | **Pluggy → Supabase** (`bank_connections`, `bank_balances`) | Conta corrente ligada: o saldo do banco substitui o derivado no snapshot; cartões só informação ([OPEN_FINANCE.md](./OPEN_FINANCE.md)). |
 | Login / household | **Supabase Auth** | |
 
 ### Escritas: tudo por RPC atômica
