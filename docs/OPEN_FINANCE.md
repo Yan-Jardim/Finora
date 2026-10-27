@@ -4,8 +4,11 @@ Saldos reais dos bancos lidos pela [Pluggy](https://docs.pluggy.ai), no plano gr
 até 5 conexões por conta, todas do mesmo titular, atualização automática a cada 24 h). Cada pessoa tem a própria conta
 Meu Pluggy e o próprio par de credenciais.
 
-O saldo do banco é **informação**: aparece em Contas ao lado do saldo do Finora (derivado das movimentações) para
-conferir, e nunca entra em `v_account_balances`, snapshot, faturas ou relatórios.
+O saldo do banco tem **prioridade**: cada conta corrente real (BANK) sem vínculo vira, na sincronização, uma conta do
+Finora com o nome do banco ("Itaú", "Nubank"; com o número quando a conexão tem várias) ou se liga a uma conta livre
+de mesmo nome. Para as contas ligadas, `SupabaseFinanceReader.snapshot()` usa o saldo do banco no lugar do saldo
+derivado (`preferBankBalances`), então ele entra na Visão Geral e no disponível. A view `v_account_balances` e as
+travas dos cofrinhos no banco continuam no saldo derivado. Cartões (CREDIT) ainda são só informação.
 
 ## Configuração
 
