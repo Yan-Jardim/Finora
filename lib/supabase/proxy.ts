@@ -7,7 +7,7 @@ import { supabaseEnv } from "./env";
 /**
  * Roda a cada requisição (via proxy.ts):
  *  1. renova o token de sessão (getClaims valida o JWT; nada de confiar em getSession);
- *  2. protege as rotas: sem sessão -> /login; com sessão em /login ou /cadastro -> /.
+ *  2. protege as rotas: sem sessão -> /login; com sessão em /login -> /.
  * A checagem de "tem household?" fica nos layouts (precisa do banco).
  */
 export async function updateSession(request: NextRequest) {
@@ -47,7 +47,7 @@ export async function updateSession(request: NextRequest) {
   if (!signedIn && !isPublicPath(pathname)) {
     return redirectTo("/login", pathname === "/" ? undefined : { next: safeNextPath(pathname + search) });
   }
-  if (signedIn && (pathname === "/login" || pathname === "/cadastro")) {
+  if (signedIn && pathname === "/login") {
     return redirectTo("/");
   }
   return response;

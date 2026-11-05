@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { isPublicPath, safeNextPath } from "@/lib/auth/paths";
-import { loginSchema, onboardingSchema, signupSchema } from "@/schemas/auth";
+import { loginSchema, onboardingSchema } from "@/schemas/auth";
 
 describe("rotas públicas", () => {
-  it("login, cadastro e callback são públicos; o resto exige sessão", () => {
-    for (const path of ["/login", "/cadastro", "/auth/callback"]) expect(isPublicPath(path)).toBe(true);
-    for (const path of ["/", "/contas", "/movimentacoes", "/onboarding", "/login-falso", "/authx"]) {
+  it("login e callback são públicos; o resto (inclusive o antigo /cadastro) exige sessão", () => {
+    for (const path of ["/login", "/auth/callback"]) expect(isPublicPath(path)).toBe(true);
+    for (const path of ["/", "/cadastro", "/contas", "/movimentacoes", "/onboarding", "/login-falso", "/authx"]) {
       expect(isPublicPath(path)).toBe(false);
     }
   });
@@ -30,16 +30,6 @@ describe("schemas de autenticação", () => {
     expect(loginSchema.safeParse({ email: "nao-e-email", password: "x" }).success).toBe(false);
     const ok = loginSchema.safeParse({ email: "  Ana@Exemplo.COM ", password: "x" });
     expect(ok.success && ok.data.email).toBe("ana@exemplo.com");
-  });
-
-  it("cadastro: senha mínima de 8 e confirmação igual", () => {
-    const base = { displayName: "Ana", email: "ana@exemplo.com", password: "12345678", confirmPassword: "12345678" };
-    expect(signupSchema.safeParse(base).success).toBe(true);
-    expect(signupSchema.safeParse({ ...base, password: "1234567", confirmPassword: "1234567" }).success).toBe(false);
-    const mismatch = signupSchema.safeParse({ ...base, confirmPassword: "outra-senha" });
-    expect(mismatch.success).toBe(false);
-    expect(!mismatch.success && mismatch.error.issues[0].path[0]).toBe("confirmPassword");
-    expect(signupSchema.safeParse({ ...base, displayName: " " }).success).toBe(false);
   });
 
   it("onboarding: perfil do casal só é exigido quando compartilhado, e não pode repetir o nome", () => {

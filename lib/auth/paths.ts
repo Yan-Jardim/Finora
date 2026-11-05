@@ -1,5 +1,5 @@
-/** Rotas acessíveis sem sessão. Todo o resto exige login. */
-const PUBLIC_PREFIXES = ["/login", "/cadastro", "/auth"];
+/** Rotas acessíveis sem sessão. Todo o resto exige login. Não há cadastro: o app é só da família. */
+const PUBLIC_PREFIXES = ["/login", "/auth"];
 
 export const isPublicPath = (pathname: string) =>
   PUBLIC_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(prefix + "/"));

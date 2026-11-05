@@ -54,7 +54,7 @@ O ponto único de escolha é `repositories/index.ts` (`createDataSource`). O mot
 
 ## 6. Rotas
 
-`/` Visão Geral · `/movimentacoes` · `/contas` · `/cartoes` · `/categorias` · `/pessoas` · `/recorrencias` · `/dividas` · `/planejamento` · `/calendario` · `/cofrinhos` · `/objetivos` · `/relatorios` · `/configuracoes` · `/login` `/cadastro` `/onboarding`. Não há mais itens "em breve" além do que o menu indicar.
+`/` Visão Geral · `/movimentacoes` · `/contas` · `/cartoes` · `/categorias` · `/pessoas` · `/recorrencias` · `/dividas` · `/planejamento` · `/calendario` · `/cofrinhos` · `/objetivos` · `/relatorios` · `/configuracoes` · `/login` `/onboarding` (sem cadastro aberto: contas só criadas pelo Yan no Supabase). Não há mais itens "em breve" além do que o menu indicar.
 
 ## 7. Erros
 

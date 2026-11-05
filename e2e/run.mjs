@@ -194,16 +194,6 @@ const authSuite = async () => {
   check("auth: e-mail digitado é mantido após o erro", (await page.$eval("main input[name=email]", (e) => e.value)).startsWith("naoexiste-"));
   check("auth: continua na tela de login", pathOf() === "/login");
 
-  await page.goto(BASE + "/cadastro", { waitUntil: "networkidle0" });
-  await fillPage("Seu nome", "Teste");
-  await fillPage("E-mail", "teste@exemplo.invalid");
-  await fillPage("Senha", "1234567");
-  await fillPage("Confirmar senha", "12345678");
-  await click("Criar conta");
-  await wait(600);
-  t = await text();
-  check("cadastro: senha curta e confirmação divergente são validadas (sem criar usuário)", t.includes("pelo menos 8 caracteres") && t.includes("As senhas não conferem."));
-
   await page.goto(BASE + "/login?next=//evil.com", { waitUntil: "networkidle0" });
   check("auth: ?next externo é descartado (anti open redirect)", (await page.$("input[name=next]")) === null);
   await page.goto(BASE + "/login?next=/contas", { waitUntil: "networkidle0" });
@@ -218,7 +208,7 @@ const authSuite = async () => {
   check("auth: login mobile sem scroll horizontal", overflow <= 0, "overflow=" + overflow);
   await shot("auth-login-mobile");
   await page.goto(BASE + "/cadastro", { waitUntil: "networkidle0" });
-  await shot("auth-cadastro-mobile");
+  check("auth: não existe página de cadastro (sem sessão volta ao login)", pathOf().startsWith("/login"));
   await page.setViewport({ width: 1280, height: 900 });
 };
 
