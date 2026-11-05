@@ -7,18 +7,6 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Informe sua senha."),
 });
 
-export const signupSchema = z
-  .object({
-    displayName: z.string().trim().min(1, "Informe seu nome.").max(40, "Máximo de 40 caracteres."),
-    email,
-    password: z.string().min(8, "A senha precisa ter pelo menos 8 caracteres.").max(72, "Máximo de 72 caracteres."),
-    confirmPassword: z.string(),
-  })
-  .refine((v) => v.password === v.confirmPassword, {
-    path: ["confirmPassword"],
-    message: "As senhas não conferem.",
-  });
-
 export const onboardingSchema = z
   .object({
     householdName: z.string().trim().min(1, "Dê um nome ao seu espaço.").max(80, "Máximo de 80 caracteres."),

@@ -1,10 +1,9 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { ZodError } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { loginSchema, onboardingSchema, signupSchema, type FormState } from "@/schemas/auth";
+import { loginSchema, onboardingSchema, type FormState } from "@/schemas/auth";
 import { safeNextPath } from "./paths";
 
 /** Server Actions de autenticação. Rodam só no servidor; o navegador nunca vê credenciais além do formulário. */
@@ -20,14 +19,6 @@ const fieldErrors = (error: ZodError): Record<string, string> => {
 
 const text = (data: FormData, key: string) => String(data.get(key) ?? "");
 
-/** Origem pública da requisição (para o link de confirmação de e-mail). */
-async function requestOrigin() {
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  const proto = h.get("x-forwarded-proto") ?? (host?.startsWith("localhost") ? "http" : "https");
-  return host ? `${proto}://${host}` : (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000");
-}
-
 function authErrorMessage(error: { code?: string; message: string; status?: number }): string {
   switch (error.code) {
     case "invalid_credentials":
@@ -37,11 +28,6 @@ function authErrorMessage(error: { code?: string; message: string; status?: numb
     case "over_request_rate_limit":
     case "over_email_send_rate_limit":
       return "Muitas tentativas. Aguarde um pouco e tente novamente.";
-    case "weak_password":
-      return "Senha muito fraca. Use uma senha mais forte.";
-    case "user_already_exists":
-    case "email_exists":
-      return "Já existe uma conta com este e-mail. Tente entrar.";
     default:
       return error.status === 429 ? "Muitas tentativas. Aguarde um pouco e tente novamente." : "Não foi possível concluir. Tente novamente.";
   }
@@ -57,35 +43,6 @@ export async function loginAction(_prev: FormState, formData: FormData): Promise
   if (error) return { error: authErrorMessage(error), values };
 
   redirect(safeNextPath(text(formData, "next")));
-}
-
-export async function signupAction(_prev: FormState, formData: FormData): Promise<FormState> {
-  const parsed = signupSchema.safeParse({
-    displayName: text(formData, "displayName"),
-    email: text(formData, "email"),
-    password: text(formData, "password"),
-    confirmPassword: text(formData, "confirmPassword"),
-  });
-  const values = { displayName: text(formData, "displayName"), email: text(formData, "email") };
-  if (!parsed.success) return { fieldErrors: fieldErrors(parsed.error), values };
-
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp({
-    email: parsed.data.email,
-    password: parsed.data.password,
-    options: {
-      data: { display_name: parsed.data.displayName },
-      emailRedirectTo: `${await requestOrigin()}/auth/callback`,
-    },
-  });
-  if (error) return { error: authErrorMessage(error), values };
-
-  // Com "Confirm email" desligado, a sessão já vem pronta e o usuário segue para o onboarding.
-  if (data.session) redirect("/onboarding");
-
-  return {
-    message: `Enviamos um link de confirmação para ${parsed.data.email}. Abra o e-mail para ativar sua conta e depois entre.`,
-  };
 }
 
 export async function logoutAction() {
